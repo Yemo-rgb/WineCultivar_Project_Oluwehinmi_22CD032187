@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wine Cultivar Prediction</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.2em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+        
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-predict {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-reset {
+            background: #e0e0e0;
+            color: #333;
+        }
+        
+        .btn-reset:hover {
+            background: #d0d0d0;
+        }
+        
+        .result {
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            display: none;
+        }
+        
+        .result h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+        
+        .prob-bar {
+            margin: 15px 0;
+        }
+        
+        .prob-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .bar {
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            transition: width 1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .bar-0 { background: linear-gradient(90deg, #e74c3c, #c0392b); }
+        .bar-1 { background: linear-gradient(90deg, #3498db, #2980b9); }
+        .bar-2 { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🍷 Wine Cultivar Prediction</h1>
+        <p class="subtitle">Machine Learning Classification System</p>
+        
+        <div class="info-box">
+            <strong>ℹ️ About:</strong> This system predicts wine cultivar (origin) based on chemical properties using Random Forest Classifier.
+        </div>
+        
+        <form id="predictionForm">
+            <div class="form-group">
+                <label>Alcohol (%)</label>
+                <input type="number" step="0.01" name="alcohol" required placeholder="e.g., 13.2">
+            </div>
+            
+            <div class="form-group">
+                <label>Malic Acid (g/L)</label>
+                <input type="number" step="0.01" name="malic_acid" required placeholder="e.g., 2.5">
+            </div>
+            
+            <div class="form-group">
+                <label>Ash (g/L)</label>
+                <input type="number" step="0.01" name="ash" required placeholder="e.g., 2.4">
+            </div>
+            
+            <div class="form-group">
+                <label>Magnesium (mg/L)</label>
+                <input type="number" step="0.01" name="magnesium" required placeholder="e.g., 100">
+            </div>
+            
+            <div class="form-group">
+                <label>Flavanoids (g/L)</label>
+                <input type="number" step="0.01" name="flavanoids" required placeholder="e.g., 2.8">
+            </div>
+            
+            <div class="form-group">
+                <label>Color Intensity</label>
+                <input type="number" step="0.01" name="color_intensity" required placeholder="e.g., 5.5">
+            </div>
+            
+            <div class="button-group">
+                <button type="submit" class="btn-predict">🔍 Predict Cultivar</button>
+                <button type="reset" class="btn-reset">🔄 Reset</button>
+            </div>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing wine properties...</p>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result" id="result">
+            <h2 id="resultTitle"></h2>
+            
+            <div class="prob-bar">
+                <div class="prob-label">
+                    <span>Cultivar 0 Probability</span>
+                    <span id="prob0">0%</span>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill bar-0" id="bar0" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="prob-bar">
+                <div class="prob-label">
+                    <span>Cultivar 1 Probability</span>
+                    <span id="prob1">0%</span>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill bar-1" id="bar1" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <div class="prob-bar">
+                <div class="prob-label">
+                    <span>Cultivar 2 Probability</span>
+                    <span id="prob2">0%</span>
+                </div>
+                <div class="bar">
+                    <div class="bar-fill bar-2" id="bar2" style="width: 0%"></div>
+                </div>
+            </div>
+            
+            <p style="margin-top: 20px; font-weight: 600; font-size: 1.1em;">
+                Confidence Level: <span id="confidence">0%</span>
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        const form = document.getElementById('predictionForm');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+        
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            result.style.display = 'none';
+            error.style.display = 'none';
+            loading.style.display = 'block';
+            
+            try {
+                const formData = new FormData(form);
+                const response = await fetch('/predict', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(data);
+                } else {
+                    showError(data.error || 'Prediction failed');
+                }
+            } catch (err) {
+                showError('Connection error. Please try again.');
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        function showResult(data) {
+            document.getElementById('resultTitle').textContent = `🎯 Prediction: ${data.prediction}`;
+            
+            const p0 = (data.probability_cultivar_0 * 100).toFixed(2);
+            const p1 = (data.probability_cultivar_1 * 100).toFixed(2);
+            const p2 = (data.probability_cultivar_2 * 100).toFixed(2);
+            
+            document.getElementById('prob0').textContent = p0 + '%';
+            document.getElementById('prob1').textContent = p1 + '%';
+            document.getElementById('prob2').textContent = p2 + '%';
+            
+            setTimeout(() => {
+                document.getElementById('bar0').style.width = p0 + '%';
+                document.getElementById('bar0').textContent = p0 + '%';
+                document.getElementById('bar1').style.width = p1 + '%';
+                document.getElementById('bar1').textContent = p1 + '%';
+                document.getElementById('bar2').style.width = p2 + '%';
+                document.getElementById('bar2').textContent = p2 + '%';
+            }, 100);
+            
+            document.getElementById('confidence').textContent = data.confidence.toFixed(2) + '%';
+            result.style.display = 'block';
+        }
+        
+        function showError(message) {
+            error.textContent = '❌ Error: ' + message;
+            error.style.display = 'block';
+        }
+        
+        form.addEventListener('reset', () => {
+            result.style.display = 'none';
+            error.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
